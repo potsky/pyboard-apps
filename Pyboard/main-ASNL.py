@@ -14,12 +14,6 @@ timer = 0
 load  = 0
 sw    = Switch()
 text  = []
-fixe  = False
-
-yesterday = 0
-today = 0
-tomorrow = 0
-day_after_tomorrow = 0
 
 leds.init()
 leds.fill_raw(leds.LED_ADDR,0,0,0);
@@ -36,25 +30,22 @@ while True:
         if load==0:
             response = None
             try:
-                response = urequests.get('http://149.202.45.91/pyboard-apps/AirQuality.php')
+                response = urequests.get('http://149.202.45.91/pyboard-apps/ASNL.php')
                 parsed = response.json()
                 print('[Load] Server:',parsed)
-                fixe = True # fixed display
-                if "yesterday" in parsed:
-                    yesterday = parsed["yesterday"]
-                    today = parsed["today"]
-                    tomorrow = parsed["tomorrow"]
-                    day_after_tomorrow = parsed["day_after_tomorrow"]
-
-                    leds.fill_raw(leds.LED_ADDR,0,0,0)
-                    leds.bar(leds.LED_ADDR,0,0,int(yesterday))
-                    leds.bar(leds.LED_ADDR,2,0,int(today))
-                    leds.bar(leds.LED_ADDR,4,0,int(tomorrow))
-                    leds.bar(leds.LED_ADDR,5,0,int(day_after_tomorrow))
+                if "rank" in parsed:
+                    if parsed['win']:
+                        color = 'v'
+                    elif parsed['lose']:
+                        color = 'r'
+                    else:
+                        color = 'w'
+                    display = 'p>w ' + parsed['rank'].upper() + ' p>' + color + ' ' + parsed['result'].upper() + ' p>g ' + parsed['team'].upper() + ' '
+                    text = chars.get_text_buffer(display)
+                    print('[Load] Display:', display)
                 else:
                     print('[Load] Bad response:', response.status_code, response.reason)
             except Exception as e:
-                fixe = False # scroll display
                 if response:
                     # server error
                     text = chars.get_text_buffer('r?g' + str(response.status_code) + 'w¿')
@@ -70,16 +61,13 @@ while True:
         leds.loader(leds.LED_ADDR, load, orientation, color)
         load = (load+1)%6
 
-    if fixe == False:
-        if timer % scroll == 0:
-            try:
-                if text:
-                    leds.display(leds.LED_ADDR,text,orientation,6,chars.PIXEL_SIZE)
-                    chars.scroll_left(text)
-            except Exception as e:
-                print('[Scroll]', str(e))
+    if timer % scroll == 0:
+        try:
+            if text:
+                leds.display(leds.LED_ADDR,text,orientation,6,chars.PIXEL_SIZE)
+                chars.scroll_left(text)
+        except Exception as e:
+            print('[Scroll]', str(e))
     
     time.sleep_ms(sleep)
     timer = 0 if (timer>=1000000) else timer + sleep
-
-

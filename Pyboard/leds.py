@@ -1,5 +1,7 @@
 import time, machine
+import math
 import chars
+import colors
 
 palette = {
   "r" : [255,0,0],
@@ -174,4 +176,18 @@ def loader(addr, value, orientation, color='w'):
             set_dot(addr, 5, i, 0, 0, 0, orientation)
         else:
             set_dot(addr, 5, i, int(palette[color][0]/4), int(palette[color][1]/4), int(palette[color][2]/4), orientation)
+
+def bar(addr, x, orientation, value, minv=0, maxv=80, min_r=0, min_g=255, min_b=0, max_r=255, max_g=0, max_b=0):
+    divider = (maxv-minv)/5
+    target  = max(min(value,maxv),minv)
+    height  = math.floor(max(min(target/divider,4),0))+1
+
+    pct   = target/(maxv-minv)
+    hmin  = colors.rgb2hex([min_r,min_g,min_b])
+    hmax  = colors.rgb2hex([max_r,max_g,max_b])
+    hcolor= colors.mix(hmax,hmin,pct)
+    color = colors.hex2rgb(hcolor)
+
+    for y in range(height):
+        set_dot(addr, y+1, 5-x, color[0], color[1], color[2], orientation)
 
